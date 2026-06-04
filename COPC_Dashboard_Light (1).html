@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>COPC OPD Biller Efficiency Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root{--bg:#F0F4FA;--card:#FFFFFF;--card2:#F5F7FC;--bdr:#E2E8F0;--bdr2:#CBD5E1;--t1:#1E293B;--t2:#64748B;--t3:#94A3B8;
+--blue:#2563EB;--blue2:#1D4ED8;--grn:#16A34A;--grn2:#15803D;--red:#DC2626;--red2:#B91C1C;
+--amb:#D97706;--amb2:#B45309;--pur:#7C3AED;--teal:#0D9488;--pink:#DB2777;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;font-size:13px}
+.pg{max-width:1300px;margin:0 auto;padding:22px 26px}
+
+/* Header */
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+.hdr-left h1{font-size:20px;font-weight:700;letter-spacing:-.3px;
+  background:linear-gradient(135deg,#2563EB,#7C3AED 60%,#0D9488);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hdr-left p{font-size:11px;color:var(--t3);margin-top:5px;line-height:1.6}
+.hdr-badge{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.badge{font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;letter-spacing:.03em}
+.badge.blue{background:rgba(37,99,235,.1);color:var(--blue);border:1px solid rgba(37,99,235,.25)}
+.badge.grn{background:rgba(22,163,74,.1);color:var(--grn);border:1px solid rgba(22,163,74,.22)}
+.badge.pur{background:rgba(124,58,237,.1);color:var(--pur);border:1px solid rgba(124,58,237,.22)}
+
+/* Controls */
+.ctrls{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
+  background:var(--card);padding:14px 18px;border-radius:16px;border:1px solid var(--bdr);margin-bottom:16px}
+.ctrl{display:flex;flex-direction:column;gap:4px}
+.ctrl label{font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.1em}
+.ctrl select{font-size:12px;padding:7px 10px;border:1px solid var(--bdr2);border-radius:8px;
+  background:var(--card2);color:var(--t1);font-family:inherit;outline:none;cursor:pointer}
+.ctrl select:focus{border-color:var(--blue)}
+.tg{display:flex;border:1px solid var(--bdr2);border-radius:8px;overflow:hidden}
+.tg button{padding:7px 18px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;
+  background:var(--card2);color:var(--t2);border:none;border-right:1px solid var(--bdr2);transition:all .15s}
+.tg button:last-child{border-right:none}
+.tg button.on{background:var(--blue2);color:#fff;font-weight:600}
+.tg button:hover:not(.on){background:#EFF6FF;color:var(--blue)}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:var(--card);border-radius:14px;padding:14px 16px;border:1px solid var(--bdr);position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.blue::before{background:linear-gradient(90deg,var(--blue),var(--pur))}
+.kpi.grn::before{background:var(--grn)}
+.kpi.red::before{background:var(--red)}
+.kpi.amb::before{background:var(--amb)}
+.kpi.teal::before{background:var(--teal)}
+.kpi .l{font-size:10px;color:var(--t3);font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.kpi .v{font-size:24px;font-weight:700;line-height:1}
+.kpi .s{font-size:10px;color:var(--t3);margin-top:5px}
+.kpi.blue .v{color:var(--blue)}.kpi.grn .v{color:var(--grn)}.kpi.red .v{color:var(--red)}.kpi.amb .v{color:var(--amb)}.kpi.teal .v{color:var(--teal)}
+
+/* Cards */
+.card{background:var(--card);border-radius:16px;padding:18px 20px;margin-bottom:14px;border:1px solid var(--bdr)}
+.card-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px}
+.card h2{font-size:14px;font-weight:600;color:var(--t1);letter-spacing:-.2px}
+.card .cs{font-size:11px;color:var(--t3);margin-bottom:12px;line-height:1.5}
+.leg{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px}
+.li{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t2)}
+.lb{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.ll{width:20px;height:3px;border-radius:2px;flex-shrink:0}
+
+/* Util bars */
+.ur{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.ul{width:48px;flex-shrink:0;font-size:11px;color:var(--t3);font-weight:500;text-align:right}
+.ub{flex:1;height:18px;background:var(--card2);border-radius:6px;overflow:hidden;position:relative;border:1px solid var(--bdr)}
+.uf{height:100%;border-radius:5px;transition:width .4s cubic-bezier(.4,0,.2,1)}
+.urf{position:absolute;top:0;bottom:0;width:2px;background:rgba(220,38,38,.5);z-index:2}
+.uv{width:50px;text-align:right;flex-shrink:0;font-weight:700;font-size:11px}
+.ptag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;
+  background:#FEE2E2;color:var(--red);flex-shrink:0;border:1px solid #FECACA;letter-spacing:.04em}
+
+/* Heatmap */
+.htw{overflow-x:auto;border-radius:12px;border:1px solid var(--bdr)}
+table{border-collapse:collapse;width:100%;font-size:11px}
+th{background:var(--card2);color:var(--t2);font-weight:600;padding:9px 10px;
+  text-align:center;border:1px solid var(--bdr);white-space:nowrap;font-size:10px;letter-spacing:.02em}
+th.hl{text-align:left;min-width:52px}
+th .bilc{display:block;font-size:9px;font-weight:400;color:var(--t3);margin-top:3px;letter-spacing:0}
+td{padding:7px 9px;text-align:center;border:1px solid var(--bdr);font-size:10px;font-weight:600;line-height:1.5;transition:background .2s}
+td.hl{text-align:left;color:var(--t3);font-weight:500;background:var(--card2);white-space:nowrap;font-size:11px}
+td .sub{display:block;font-size:8px;font-weight:400;opacity:.75;margin-top:1px}
+/* Cell states */
+.cd{background:#FEE2E2;color:#991B1B;border-color:#FECACA!important}
+.cg{background:#DCFCE7;color:#166534;border-color:#BBF7D0!important}
+.cb{background:#DBEAFE;color:#1E40AF;border-color:#BFDBFE!important}
+.ca{background:#FEF3C7;color:#92400E;border-color:#FDE68A!important}
+.cn{background:var(--card2);color:var(--t3);font-weight:400}
+
+/* Recommendations */
+.rc{border-radius:12px;padding:12px 16px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start}
+.rc.def{background:#FFF5F5;border:1px solid #FECACA}
+.rc.sur{background:#F0FDF4;border:1px solid #BBF7D0}
+.rc .ri{font-size:18px;flex-shrink:0;margin-top:1px}
+.rc .rt{font-weight:600;color:var(--t1);margin-bottom:4px;font-size:12px;line-height:1.4}
+.rc .rd{font-size:11px;color:var(--t2);line-height:1.5}
+.rc .tag{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;margin-right:4px;letter-spacing:.04em}
+.rc.def .tag{background:#FEE2E2;color:var(--red)}
+.rc.sur .tag{background:#DCFCE7;color:var(--grn)}
+
+.divider{height:1px;background:var(--bdr);margin:14px 0}
+</style>
+</head>
+<body>
+<div class="pg">
+
+<!-- Header -->
+<div class="hdr">
+  <div class="hdr-left">
+    <h1>COPC OPD — Biller Efficiency &amp; Rebalancing</h1>
+    <p>Shift-aware capacity · 3-month data (78 working days) · 12 billers across 8 blocks · All charts respond to every control below</p>
+  </div>
+  <div class="hdr-badge">
+    <span class="badge blue">78 Working Days</span>
+    <span class="badge grn">12 Billers</span>
+    <span class="badge pur">8 Blocks</span>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="ctrls">
+  <div class="ctrl"><label>Floor</label><select id="sf" onchange="onF()"></select></div>
+  <div class="ctrl"><label>Block</label><select id="sb" onchange="go()"></select></div>
+  <div class="ctrl"><label>Avg Bill Time</label>
+    <div class="tg">
+      <button id="t5" onclick="setBT(5)">5 min</button>
+      <button id="t7" class="on" onclick="setBT(7)">7 min</button>
+      <button id="t10" onclick="setBT(10)">10 min</button>
+    </div>
+  </div>
+  <div class="ctrl"><label>Peak Threshold</label>
+    <select id="sp" onchange="go()">
+      <option value="80">≥ 80%</option>
+      <option value="100" selected>≥ 100% (over capacity)</option>
+      <option value="120">≥ 120%</option>
+    </select>
+  </div>
+  <div class="ctrl"><label>Surplus below</label>
+    <select id="ss" onchange="go()">
+      <option value="40">&lt; 40%</option>
+      <option value="50" selected>&lt; 50%</option>
+      <option value="60">&lt; 60%</option>
+    </select>
+  </div>
+  <div class="ctrl"><label>Hour Filter</label>
+    <select id="sh" onchange="go()">
+      <option value="core" selected>Core (7AM – 7PM)</option>
+      <option value="all">All hours</option>
+      <option value="peak">Peak hours only</option>
+    </select>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="kpis" id="kpis"></div>
+
+<!-- Chart 1: Bar -->
+<div class="card">
+  <div class="card-hdr">
+    <div>
+      <h2>📊 Bills Prepared vs Biller Capacity — by Hour</h2>
+      <p class="cs">3 bars per hour: avg bills/day · billers on duty · max capacity &nbsp;·&nbsp; Numbers above each bar &nbsp;·&nbsp; Red = peak hours &nbsp;·&nbsp; Toggle bill time to recalculate</p>
+    </div>
+  </div>
+  <div class="leg">
+    <span class="li"><span class="lb" style="background:var(--blue)"></span>Avg bills / day</span>
+    <span class="li"><span class="lb" style="background:var(--grn);opacity:.8"></span>Billers on duty (that hour)</span>
+    <span class="li"><span class="lb" style="background:var(--red);opacity:.35"></span>Max capacity (billers × 60÷bill time)</span>
+  </div>
+  <div style="position:relative;width:100%;height:330px"><canvas id="c1"></canvas></div>
+</div>
+
+<!-- Chart 2: Block lines -->
+<div class="card">
+  <h2>📈 Block-wise Hourly Trend — Avg Bills/Day</h2>
+  <p class="cs">Each line = one block &nbsp;·&nbsp; Hover to compare all blocks at the same hour &nbsp;·&nbsp; Filtered by floor selector above</p>
+  <div class="leg" id="bleg"></div>
+  <div style="position:relative;width:100%;height:250px"><canvas id="c2"></canvas></div>
+</div>
+
+<!-- Chart 3: Util line -->
+<div class="card">
+  <h2>⚡ Utilisation % by Hour &nbsp;<span style="font-size:11px;font-weight:400;color:var(--t3)">(avg bills ÷ max capacity × 100 &nbsp;·&nbsp; dashed line = 100% &nbsp;·&nbsp; red dot = peak)</span></h2>
+  <p class="cs">Shows exactly how stretched each hour is &nbsp;·&nbsp; Responds to bill time toggle</p>
+  <div style="position:relative;width:100%;height:190px"><canvas id="c3"></canvas></div>
+</div>
+
+<!-- Util bars -->
+<div class="card">
+  <h2>📶 Hour-by-Hour Utilisation</h2>
+  <p class="cs">Green = surplus capacity &nbsp;·&nbsp; Amber = moderate &nbsp;·&nbsp; Red = over capacity &nbsp;·&nbsp; Vertical line = 100%</p>
+  <div id="ubars"></div>
+</div>
+
+<!-- Heatmap -->
+<div class="card">
+  <div class="card-hdr">
+    <div>
+      <h2>🗺️ Manpower Gap Heatmap — Block × Hour</h2>
+      <p class="cs">Column header: block name + total billers assigned &nbsp;·&nbsp; Each cell: utilisation % + billers present that hour (e.g. <strong>2B</strong> = 2 billers) + gap &nbsp;·&nbsp; Fully responds to all toggles</p>
+    </div>
+  </div>
+  <div class="leg">
+    <span class="li"><span class="lb" style="background:#FEE2E2;border:1px solid #FCA5A5"></span>Deficit ≥ peak threshold</span>
+    <span class="li"><span class="lb" style="background:#DCFCE7;border:1px solid #86EFAC"></span>Surplus &lt; surplus threshold</span>
+    <span class="li"><span class="lb" style="background:#DBEAFE;border:1px solid #93C5FD"></span>Balanced (50–99%)</span>
+    <span class="li"><span class="lb" style="background:#FEF3C7;border:1px solid #FDE68A"></span>Bills with no biller on shift</span>
+  </div>
+  <div class="htw"><table id="ht"></table></div>
+</div>
+
+<!-- Recommendations -->
+<div class="card">
+  <h2>💡 Rebalancing Recommendations</h2>
+  <p class="cs">Auto-generated from heatmap &nbsp;·&nbsp; Deficit hours matched with surplus blocks to borrow from &nbsp;·&nbsp; Updates with every toggle</p>
+  <div id="recos"></div>
+</div>
+
+</div><!-- /pg -->
+
+<script>
+var BM = 7;
+var HO = ['6 AM-7 AM','7 AM-8 AM','8 AM-9 AM','9 AM-10 AM','10 AM-11 AM','11 AM-12 PM',
+          '12 PM-1 PM','1 PM-2 PM','2 PM-3 PM','3 PM-4 PM','4 PM-5 PM','5 PM-6 PM',
+          '6 PM-7 PM','7 PM-8 PM','8 PM-9 PM','9 PM-10 PM'];
+var SHH = {'6 AM-7 AM':'6A','7 AM-8 AM':'7A','8 AM-9 AM':'8A','9 AM-10 AM':'9A',
+           '10 AM-11 AM':'10A','11 AM-12 PM':'11A','12 PM-1 PM':'12P','1 PM-2 PM':'1P',
+           '2 PM-3 PM':'2P','3 PM-4 PM':'3P','4 PM-5 PM':'4P','5 PM-6 PM':'5P',
+           '6 PM-7 PM':'6P','7 PM-8 PM':'7P','8 PM-9 PM':'8P','9 PM-10 PM':'9P'};
+var CORE = ['7 AM-8 AM','8 AM-9 AM','9 AM-10 AM','10 AM-11 AM','11 AM-12 PM','12 PM-1 PM',
+            '1 PM-2 PM','2 PM-3 PM','3 PM-4 PM','4 PM-5 PM','5 PM-6 PM','6 PM-7 PM','7 PM-8 PM'];
+var BFL = {
+  'All Floors':  ['All Blocks'],
+  'Ground Floor':['All Blocks','B Block','C Block'],
+  '1st Floor':   ['All Blocks','A Block','B Block','C Block'],
+  '2nd Floor':   ['All Blocks','B Block'],
+  '3rd Floor':   ['All Blocks','A Block','B Block']
+};
+var FL = ['All Floors','Ground Floor','1st Floor','2nd Floor','3rd Floor'];
+var BCOLS = ['#F87171','#5B9BF8','#34D399','#FBBF24','#C084FC','#2DD4BF','#F472B6','#818CF8'];
+
+var BLOCKS = [
+  {f:'Ground Floor',b:'B Block',l:'GF-B'},
+  {f:'Ground Floor',b:'C Block',l:'GF-C'},
+  {f:'1st Floor',   b:'A Block',l:'1F-A'},
+  {f:'1st Floor',   b:'B Block',l:'1F-B'},
+  {f:'1st Floor',   b:'C Block',l:'1F-C'},
+  {f:'2nd Floor',   b:'B Block',l:'2F-B'},
+  {f:'3rd Floor',   b:'A Block',l:'3F-A'},
+  {f:'3rd Floor',   b:'B Block',l:'3F-B'}
+];
+
+var SHIFTS = {
+  'Ground Floor|B Block':[{s:9,e:18},{s:7,e:16}],
+  'Ground Floor|C Block':[{s:6,e:15}],
+  '1st Floor|A Block':   [{s:9,e:18}],
+  '1st Floor|B Block':   [{s:7,e:16},{s:9,e:18}],
+  '1st Floor|C Block':   [{s:8,e:17}],
+  '2nd Floor|B Block':   [{s:10,e:19},{s:9,e:18}],
+  '3rd Floor|A Block':   [{s:9,e:18}],
+  '3rd Floor|B Block':   [{s:8,e:17},{s:10,e:19}]
+};
+
+/* ── 3-MONTH DATA (avg bills/day ÷ 78 working days) ── */
+var RAW = {
+  'Ground Floor|B Block':{'6 AM-7 AM':0.3,'7 AM-8 AM':2.6,'8 AM-9 AM':5.0,'9 AM-10 AM':8.9,'10 AM-11 AM':12.0,'11 AM-12 PM':12.4,'12 PM-1 PM':11.2,'1 PM-2 PM':8.7,'2 PM-3 PM':10.4,'3 PM-4 PM':7.5,'4 PM-5 PM':5.7,'5 PM-6 PM':3.4,'6 PM-7 PM':1.5,'7 PM-8 PM':0.4,'8 PM-9 PM':0.6,'9 PM-10 PM':0.7},
+  'Ground Floor|C Block':{'6 AM-7 AM':12.0,'7 AM-8 AM':12.7,'8 AM-9 AM':11.1,'9 AM-10 AM':9.7,'10 AM-11 AM':10.9,'11 AM-12 PM':15.5,'12 PM-1 PM':16.4,'1 PM-2 PM':11.0},
+  '1st Floor|A Block':   {'7 AM-8 AM':0.1,'8 AM-9 AM':0.1,'9 AM-10 AM':1.8,'10 AM-11 AM':9.1,'11 AM-12 PM':14.2,'12 PM-1 PM':14.4,'1 PM-2 PM':8.6,'2 PM-3 PM':3.1,'3 PM-4 PM':2.1,'4 PM-5 PM':4.7,'5 PM-6 PM':5.2,'6 PM-7 PM':0.8,'7 PM-8 PM':0.2,'8 PM-9 PM':0.2,'9 PM-10 PM':0.1},
+  '1st Floor|B Block':   {'6 AM-7 AM':0.1,'7 AM-8 AM':3.0,'8 AM-9 AM':6.2,'9 AM-10 AM':7.3,'10 AM-11 AM':10.2,'11 AM-12 PM':14.7,'12 PM-1 PM':17.2,'1 PM-2 PM':12.6,'2 PM-3 PM':8.6,'3 PM-4 PM':6.2,'4 PM-5 PM':2.8,'5 PM-6 PM':0.9,'6 PM-7 PM':0.4,'7 PM-8 PM':0.2,'8 PM-9 PM':0.5,'9 PM-10 PM':0.3},
+  '1st Floor|C Block':   {'6 AM-7 AM':0.1,'7 AM-8 AM':0.2,'8 AM-9 AM':1.7,'9 AM-10 AM':7.0,'10 AM-11 AM':11.6,'11 AM-12 PM':11.9,'12 PM-1 PM':9.3,'1 PM-2 PM':6.8,'2 PM-3 PM':6.1,'3 PM-4 PM':5.1,'4 PM-5 PM':2.7,'5 PM-6 PM':1.4,'6 PM-7 PM':0.5,'7 PM-8 PM':0.3,'8 PM-9 PM':0.3},
+  '2nd Floor|B Block':   {'7 AM-8 AM':0.1,'8 AM-9 AM':0.3,'9 AM-10 AM':3.3,'10 AM-11 AM':9.6,'11 AM-12 PM':18.9,'12 PM-1 PM':26.4,'1 PM-2 PM':23.0,'2 PM-3 PM':15.6,'3 PM-4 PM':12.6,'4 PM-5 PM':6.2,'5 PM-6 PM':2.0,'6 PM-7 PM':0.6,'7 PM-8 PM':0.7,'8 PM-9 PM':0.7,'9 PM-10 PM':0.2},
+  '3rd Floor|A Block':   {'7 AM-8 AM':0.1,'8 AM-9 AM':0.5,'9 AM-10 AM':4.8,'10 AM-11 AM':8.4,'11 AM-12 PM':12.6,'12 PM-1 PM':12.0,'1 PM-2 PM':5.0,'2 PM-3 PM':4.6,'3 PM-4 PM':9.8,'4 PM-5 PM':11.9,'5 PM-6 PM':3.9,'6 PM-7 PM':1.1,'7 PM-8 PM':0.2,'8 PM-9 PM':0.1},
+  '3rd Floor|B Block':   {'7 AM-8 AM':0.7,'8 AM-9 AM':9.6,'9 AM-10 AM':10.5,'10 AM-11 AM':11.6,'11 AM-12 PM':17.9,'12 PM-1 PM':22.8,'1 PM-2 PM':20.9,'2 PM-3 PM':18.9,'3 PM-4 PM':15.8,'4 PM-5 PM':8.5,'5 PM-6 PM':3.5,'6 PM-7 PM':1.5,'7 PM-8 PM':1.0,'8 PM-9 PM':0.2,'9 PM-10 PM':0.1}
+};
+
+/* ── helpers ── */
+function hn(iv){var m=iv.match(/(\d+)\s*(AM|PM)/);var h=parseInt(m[1]);if(m[2]==='PM'&&h!==12)h+=12;if(m[2]==='AM'&&h===12)h=0;return h;}
+var HN={};for(var i=0;i<HO.length;i++)HN[HO[i]]=hn(HO[i]);
+
+function bilAt(f,b,iv){var sh=SHIFTS[f+'|'+b]||[];var h=HN[iv],c=0;for(var i=0;i<sh.length;i++)if(sh[i].s<=h&&h<sh[i].e)c++;return c;}
+function getBills(f,b,iv){var x=RAW[f+'|'+b];return x?(x[iv]||0):0;}
+function totalBillers(f,b){return(SHIFTS[f+'|'+b]||[]).length;}
+
+function aggregate(fl,bk){
+  var bp=Math.floor(60/BM),m={};
+  for(var i=0;i<BLOCKS.length;i++){var bl=BLOCKS[i];if(fl!=='All Floors'&&bl.f!==fl)continue;if(bk!=='All Blocks'&&bl.b!==bk)continue;
+    for(var j=0;j<HO.length;j++){var v=getBills(bl.f,bl.b,HO[j]);if(v>0)m[HO[j]]=(m[HO[j]]||0)+v;}}
+  var r=[];
+  for(var k=0;k<HO.length;k++){var iv=HO[k];if(!m[iv]||m[iv]<0.05)continue;
+    var ab=Math.round(m[iv]*10)/10,bi=0;
+    if(bk!=='All Blocks'){bi=bilAt(fl,bk,iv);}
+    else{for(var n=0;n<BLOCKS.length;n++){if(fl!=='All Floors'&&BLOCKS[n].f!==fl)continue;bi+=bilAt(BLOCKS[n].f,BLOCKS[n].b,iv);}}
+    var cp=bi*bp,ut=cp>0?Math.round(ab/cp*1000)/10:null;
+    r.push({iv:iv,ab:ab,bi:bi,cp:cp,ut:ut});}
+  return r;
+}
+function filterH(d,hm,th){
+  if(hm==='core')return d.filter(function(x){return CORE.indexOf(x.iv)>=0;});
+  if(hm==='peak')return d.filter(function(x){return(x.ut||0)>=th;});
+  return d;
+}
+
+var C1=null,C2=null,C3=null;
+
+function setBT(m){BM=m;['t5','t7','t10'].forEach(function(id){document.getElementById(id).classList.remove('on');});document.getElementById('t'+m).classList.add('on');go();}
+function onF(){var f=document.getElementById('sf').value,bs=BFL[f]||['All Blocks'],sb=document.getElementById('sb');sb.innerHTML='';bs.forEach(function(b){var o=document.createElement('option');o.text=b;o.value=b;sb.appendChild(o);});go();}
+
+function go(){
+  var fl=document.getElementById('sf').value;
+  var bk=document.getElementById('sb').value;
+  var th=parseInt(document.getElementById('sp').value);
+  var su=parseInt(document.getElementById('ss').value);
+  var hm=document.getElementById('sh').value;
+  var bp=Math.floor(60/BM);
+
+  var allD=aggregate(fl,bk);
+  var d=filterH(allD,hm,th);
+  if(!d.length)return;
+
+  var pk=d.reduce(function(a,b){return b.ab>a.ab?b:a;});
+  var ph=d.filter(function(x){return(x.ut||0)>=th;}).length;
+  var uts=d.map(function(x){return x.ut;});
+  var mx=Math.max.apply(null,uts.filter(function(u){return u!==null;}).concat([0]));
+  var tb=Math.round(d.reduce(function(a,x){return a+x.ab;},0)*10)/10;
+
+  /* KPIs */
+  document.getElementById('kpis').innerHTML=
+    '<div class="kpi blue"><div class="l">Avg Bills / Day</div><div class="v">'+tb+'</div><div class="s">selected view</div></div>'+
+    '<div class="kpi teal"><div class="l">Peak Hour</div><div class="v" style="font-size:15px">'+SHH[pk.iv]+'</div><div class="s">'+pk.ab+' avg bills/day</div></div>'+
+    '<div class="kpi '+(mx>=150?'red':mx>=100?'amb':'grn')+'"><div class="l">Max Utilisation</div><div class="v">'+mx+'%</div><div class="s">at '+SHH[pk.iv]+'</div></div>'+
+    '<div class="kpi '+(ph>0?'red':'grn')+'"><div class="l">Over-Threshold Hrs</div><div class="v">'+ph+'</div><div class="s">≥ '+th+'% utilisation</div></div>'+
+    '<div class="kpi teal"><div class="l">Capacity / Biller</div><div class="v" style="font-size:16px">'+BM+'min → '+bp+'/hr</div><div class="s">bills per biller per hour</div></div>';
+
+  var lbs=d.map(function(x){return SHH[x.iv];}),bills=d.map(function(x){return x.ab;}),bils=d.map(function(x){return x.bi;}),caps=d.map(function(x){return x.cp;}),ip=d.map(function(x){return(x.ut||0)>=th;});
+
+  /* Chart 1 */
+  if(C1)C1.destroy();
+  C1=new Chart(document.getElementById('c1'),{type:'bar',
+    data:{labels:lbs,datasets:[
+      {label:'Avg bills/day',data:bills,
+       backgroundColor:bills.map(function(_,i){return ip[i]?'rgba(220,38,38,.8)':'rgba(37,99,235,.75)';}),
+       borderColor:bills.map(function(_,i){return ip[i]?'#991B1B':'#1D4ED8';}),
+       borderWidth:1,borderRadius:5,
+       datalabels:{anchor:'end',align:'end',font:{size:9,weight:'700',family:'Inter'},
+         color:bills.map(function(_,i){return ip[i]?'#7F1D1D':'#1E3A8A';}),
+         formatter:function(v){return v>0?v.toFixed(1):'';}
+       }},
+      {label:'Billers',data:bils,
+       backgroundColor:'rgba(22,163,74,.7)',borderColor:'#15803D',borderWidth:1,borderRadius:5,
+       datalabels:{anchor:'end',align:'end',font:{size:9,weight:'700',family:'Inter'},color:'#14532D',
+         formatter:function(v){return v>0?v:'';}
+       }},
+      {label:'Max capacity',data:caps,
+       backgroundColor:'rgba(220,38,38,.1)',borderColor:'rgba(220,38,38,.4)',borderWidth:1.5,borderRadius:5,
+       datalabels:{anchor:'end',align:'end',font:{size:9,weight:'700',family:'Inter'},color:'#991B1B',
+         formatter:function(v){return v>0?v:'';}
+       }}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},
+      plugins:{legend:{display:false},datalabels:{display:true},
+        tooltip:{backgroundColor:'#1E293B',borderColor:'#334155',borderWidth:1,
+          titleColor:'#F8FAFC',bodyColor:'#CBD5E1',titleFont:{family:'Inter',size:12},bodyFont:{family:'Inter',size:11},
+          callbacks:{afterBody:function(it){var i=it[0].dataIndex;return caps[i]>0?'Utilisation: '+(uts[i]||'—')+'%':'No biller on shift';}}}},
+      scales:{
+        x:{ticks:{font:{size:10,family:'Inter'},color:'#64748B',autoSkip:false,maxRotation:0},grid:{display:false},border:{color:'#E2E8F0'}},
+        y:{ticks:{font:{size:10,family:'Inter'},color:'#64748B'},grid:{color:'rgba(226,232,240,.8)'},border:{color:'#E2E8F0'}}
+      }},plugins:[ChartDataLabels]});
+
+  /* Chart 2 – block lines */
+  var vb=BLOCKS.filter(function(x){return fl==='All Floors'||x.f===fl;});
+  var lh=HO.filter(function(iv){return vb.some(function(x){return getBills(x.f,x.b,iv)>0.05;});});
+  if(hm==='core')lh=lh.filter(function(iv){return CORE.indexOf(iv)>=0;});
+  document.getElementById('bleg').innerHTML=vb.map(function(x,i){return'<span class="li"><span class="ll" style="background:'+BCOLS[i%BCOLS.length]+'"></span>'+x.l+'</span>';}).join('');
+  if(C2)C2.destroy();
+  C2=new Chart(document.getElementById('c2'),{type:'line',
+    data:{labels:lh.map(function(iv){return SHH[iv];}),
+      datasets:vb.map(function(x,i){return{label:x.l,
+        data:lh.map(function(iv){var v=getBills(x.f,x.b,iv);return v>0.05?v:null;}),
+        borderColor:BCOLS[i%BCOLS.length],backgroundColor:'transparent',borderWidth:2.5,
+        pointRadius:3.5,pointBackgroundColor:BCOLS[i%BCOLS.length],tension:.38,spanGaps:false,datalabels:{display:false}};})},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},datalabels:{display:false},
+        tooltip:{mode:'index',intersect:false,backgroundColor:'#1E293B',borderColor:'#334155',borderWidth:1,titleColor:'#F8FAFC',bodyColor:'#CBD5E1',titleFont:{family:'Inter'},bodyFont:{family:'Inter'}}},
+      scales:{
+        x:{ticks:{font:{size:10,family:'Inter'},color:'#64748B',autoSkip:false,maxRotation:0},grid:{display:false},border:{color:'#E2E8F0'}},
+        y:{ticks:{font:{size:10,family:'Inter'},color:'#64748B'},grid:{color:'rgba(226,232,240,.8)'},border:{color:'#E2E8F0'},
+           title:{display:true,text:'Avg bills / day',font:{size:10,family:'Inter'},color:'#94A3B8'}}
+      }},plugins:[ChartDataLabels]});
+
+  /* Chart 3 – util line */
+  if(C3)C3.destroy();
+  C3=new Chart(document.getElementById('c3'),{type:'line',
+    data:{labels:lbs,datasets:[
+      {label:'Util%',data:uts,borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,.06)',fill:true,tension:.38,
+       pointBackgroundColor:uts.map(function(u){return(u||0)>=th?'#DC2626':'#2563EB';}),
+       pointRadius:uts.map(function(u){return(u||0)>=th?6:3;}),borderWidth:2.5,spanGaps:false,datalabels:{display:false}},
+      {label:'100%',data:lbs.map(function(){return 100;}),borderColor:'rgba(220,38,38,.4)',
+       borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false,datalabels:{display:false}}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},datalabels:{display:false}},
+      scales:{
+        x:{ticks:{font:{size:10,family:'Inter'},color:'#64748B',autoSkip:false,maxRotation:0},grid:{display:false},border:{color:'#E2E8F0'}},
+        y:{ticks:{font:{size:10,family:'Inter'},color:'#64748B',callback:function(v){return v+'%';}},min:0,
+           grid:{color:'rgba(226,232,240,.8)'},border:{color:'#E2E8F0'}}
+      }},plugins:[ChartDataLabels]});
+
+  /* Util bars */
+  var mu=Math.max.apply(null,uts.filter(function(u){return u!==null;}).concat([100]));
+  var ubH='';
+  for(var di=0;di<d.length;di++){var x=d[di];if(x.ab<0.05)continue;
+    var u=x.ut||0,w=Math.min(u/mu*100,100),rf=Math.min(100/mu*100,100);
+    var cl=u>=th?'#DC2626':u>=su?'#D97706':'#16A34A';
+    ubH+='<div class="ur"><div class="ul">'+SHH[x.iv]+'</div>'+
+      '<div class="ub"><div class="uf" style="width:'+w+'%;background:'+cl+'"></div><div class="urf" style="left:'+rf+'%"></div></div>'+
+      '<div class="uv" style="color:'+(u>=th?'#DC2626':u>=su?'#D97706':'#16A34A')+'">'+(x.ut!==null?u+'%':'—')+'</div>'+
+      (u>=th?'<span class="ptag">PEAK</span>':'')+'</div>';
+  }
+  document.getElementById('ubars').innerHTML=ubH;
+
+  /* ── HEATMAP with biller counts ── */
+  var hb=BLOCKS.filter(function(x){return fl==='All Floors'||x.f===fl;});
+  var hh=HO.filter(function(iv){
+    if(hm==='core'&&CORE.indexOf(iv)<0)return false;
+    return hb.some(function(x){return getBills(x.f,x.b,iv)>0.05||bilAt(x.f,x.b,iv)>0;});
+  });
+
+  var rm={};
+  /* Header row – block name + total billers */
+  var htH='<tr><th class="hl">Hour</th>';
+  for(var hi=0;hi<hb.length;hi++){var tb2=totalBillers(hb[hi].f,hb[hi].b);htH+='<th>'+hb[hi].l+'<span class="bilc">'+tb2+' biller'+(tb2>1?'s':'')+'</span></th>';}
+  htH+='</tr>';
+
+  for(var ri=0;ri<hh.length;ri++){
+    var iv=hh[ri];
+    if(hm==='peak'){var ad=hb.some(function(x){var a=getBills(x.f,x.b,iv),bn=bilAt(x.f,x.b,iv),c=bn*bp;return c>0&&Math.round(a/c*100)>=th;});if(!ad)continue;}
+    htH+='<tr><td class="hl">'+SHH[iv]+'</td>';
+    for(var ci=0;ci<hb.length;ci++){
+      var bl=hb[ci],ab=getBills(bl.f,bl.b,iv),bn=bilAt(bl.f,bl.b,iv),ca=bn*bp;
+      var cls='cn',txt='—';
+      if(ab<0.05&&bn===0){cls='cn';txt='—';}
+      else if(bn===0&&ab>0.05){
+        cls='ca';txt=Math.round(ab*10)/10+'<span class="sub">0B · no shift</span>';
+      } else {
+        var u2=Math.round(ab/ca*100),g2=Math.round(ab-ca);
+        if(u2>=th){
+          cls='cd';txt=u2+'%<span class="sub">'+bn+'B · +'+(g2>0?g2:0)+' over</span>';
+          if(!rm[iv])rm[iv]={d:[],s:[]};rm[iv].d.push({l:bl.l,u:u2,g:g2,bn:bn});
+        } else if(u2<su){
+          cls='cg';txt=u2+'%<span class="sub">'+bn+'B · '+Math.round(ab*10)/10+' bills</span>';
+          if(!rm[iv])rm[iv]={d:[],s:[]};rm[iv].s.push({l:bl.l,u:u2,bn:bn});
+        } else {
+          cls='cb';txt=u2+'%<span class="sub">'+bn+'B</span>';
+        }
+      }
+      htH+='<td class="'+cls+'">'+txt+'</td>';
+    }
+    htH+='</tr>';
+  }
+  document.getElementById('ht').innerHTML=htH;
+
+  /* Recommendations */
+  var rH='';
+  var rk=[];for(var k in rm)if(hh.indexOf(k)>=0)rk.push(k);
+  rk.sort(function(a,b){return HO.indexOf(a)-HO.indexOf(b);});
+  for(var rii=0;rii<rk.length;rii++){
+    var riv=rk[rii],dd=rm[riv].d,ss=rm[riv].s;if(!dd.length)continue;
+    var ds=dd.map(function(x){return'<span class="tag">'+x.l+'</span> '+x.u+'% util · +'+x.g+' bills over cap ('+x.bn+' biller'+(x.bn>1?'s':'')+')'}).join('<br>');
+    var sr=ss.length?ss.map(function(x){return'<span class="tag">'+x.l+'</span> '+x.u+'% util — '+x.bn+' biller'+(x.bn>1?'s':'')+' spare capacity'}).join('<br>'):'<em>No surplus block at this hour — consider staggering or extending a shift</em>';
+    rH+='<div class="rc def"><div class="ri">⚠️</div><div><div class="rt">'+SHH[riv]+' — overloaded blocks</div><div class="rd">'+ds+'<div style="margin-top:6px;padding-top:6px;border-top:1px solid #FECACA"><strong style="color:#15803D">Can borrow from:</strong><br>'+sr+'</div></div></div></div>';
+  }
+  var so=hh.filter(function(iv){return rm[iv]&&rm[iv].s.length&&!rm[iv].d.length;});
+  if(so.length)rH+='<div class="rc sur"><div class="ri">💤</div><div><div class="rt">Underutilised hours — consider shorter or staggered shifts</div><div class="rd">'+so.map(function(iv){return'<span class="tag">'+SHH[iv]+'</span> '+rm[iv].s.map(function(x){return x.l+' ('+x.u+'%, '+x.bn+'B)';}).join(' · ');}).join('<br>')+'</div></div></div>';
+  if(!rH)rH='<p style="font-size:12px;color:#64748B;padding:10px 0">✅ No critical mismatches with current settings.</p>';
+  document.getElementById('recos').innerHTML=rH;
+}
+
+window.onload=function(){
+  var sf=document.getElementById('sf');
+  FL.forEach(function(f){var o=document.createElement('option');o.text=f;o.value=f;sf.appendChild(o);});
+  document.getElementById('sb').innerHTML='<option>All Blocks</option>';
+  go();
+};
+</script>
+</body>
+</html>

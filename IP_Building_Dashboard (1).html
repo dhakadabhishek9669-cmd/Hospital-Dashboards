@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IP Building FMA — Biller Efficiency Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#F0F4FA;color:#1E293B;font-size:13px;line-height:1.5}
+.pg{max-width:1340px;margin:0 auto;padding:20px 24px}
+/* HEADER */
+.hdr{background:#fff;border-radius:16px;border:1px solid #E2E8F0;padding:18px 22px;margin-bottom:14px;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.htitle{font-size:19px;font-weight:700;color:#1E293B;letter-spacing:-.3px}
+.hsub{font-size:11px;color:#64748B;margin-top:4px;line-height:1.7}
+.hbadges{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.hb{font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid;letter-spacing:.02em;white-space:nowrap}
+.hb.b1{background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE}
+.hb.b2{background:#F0FDF4;color:#15803D;border-color:#86EFAC}
+.hb.b3{background:#FDF4FF;color:#7E22CE;border-color:#E9D5FF}
+.hb.b4{background:#FFF7ED;color:#C2410C;border-color:#FED7AA}
+.hb.b5{background:#FEF2F2;color:#B91C1C;border-color:#FECACA}
+/* WARNING BAR */
+.wbar{background:#FFFBEB;border:1px solid #FCD34D;border-radius:10px;padding:10px 16px;
+  margin-bottom:14px;font-size:11px;color:#78350F;display:flex;gap:8px;align-items:flex-start;line-height:1.6}
+/* CONTROLS */
+.ctrls{background:#fff;border-radius:14px;border:1px solid #E2E8F0;padding:13px 18px;
+  margin-bottom:14px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+.ctrl{display:flex;flex-direction:column;gap:4px}
+.ctrl label{font-size:9px;font-weight:600;color:#94A3B8;text-transform:uppercase;letter-spacing:.1em}
+select{font-size:12px;padding:7px 10px;border:1px solid #CBD5E1;border-radius:8px;
+  background:#F8FAFC;color:#1E293B;font-family:inherit;outline:none;cursor:pointer;min-width:140px}
+select:focus{border-color:#2563EB;box-shadow:0 0 0 2px rgba(37,99,235,.12)}
+.tg{display:flex;border:1px solid #CBD5E1;border-radius:8px;overflow:hidden}
+.tg button{padding:7px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;
+  background:#F8FAFC;color:#64748B;border:none;border-right:1px solid #CBD5E1;transition:all .15s}
+.tg button:last-child{border-right:none}
+.tg button.on{background:#1D4ED8;color:#fff;font-weight:600}
+.tg button:hover:not(.on){background:#EFF6FF;color:#1D4ED8}
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border-radius:14px;border:1px solid #E2E8F0;padding:14px 16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.kpi.k-blue::before{background:linear-gradient(90deg,#2563EB,#7C3AED)}
+.kpi.k-grn::before{background:#16A34A}
+.kpi.k-red::before{background:#DC2626}
+.kpi.k-amb::before{background:#D97706}
+.kpi.k-teal::before{background:#0D9488}
+.kpi .kl{font-size:9.5px;font-weight:600;color:#94A3B8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.kpi .kv{font-size:26px;font-weight:700;line-height:1}
+.kpi .ks{font-size:10px;color:#94A3B8;margin-top:5px}
+.k-blue .kv{color:#1D4ED8}.k-grn .kv{color:#16A34A}.k-red .kv{color:#DC2626}.k-amb .kv{color:#D97706}.k-teal .kv{color:#0D9488}
+/* CARDS */
+.card{background:#fff;border-radius:16px;border:1px solid #E2E8F0;padding:18px 20px;margin-bottom:14px}
+.card h2{font-size:14px;font-weight:600;color:#1E293B;letter-spacing:-.2px;margin-bottom:3px}
+.csub{font-size:11px;color:#94A3B8;margin-bottom:12px;line-height:1.5}
+/* LEGEND */
+.leg{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px}
+.li{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748B}
+.lb{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.ll{width:22px;height:3px;border-radius:2px;flex-shrink:0}
+/* UTIL BARS */
+.urow{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.ulbl{width:48px;font-size:11px;color:#64748B;font-weight:500;text-align:right;flex-shrink:0}
+.ubar{flex:1;height:18px;background:#F1F5F9;border-radius:6px;overflow:hidden;position:relative;border:1px solid #E2E8F0}
+.ufill{height:100%;border-radius:5px;transition:width .35s cubic-bezier(.4,0,.2,1)}
+.uref{position:absolute;top:0;bottom:0;width:2px;background:rgba(220,38,38,.45);z-index:2}
+.uval{width:50px;text-align:right;font-weight:700;font-size:11px;flex-shrink:0}
+.ptag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;
+  background:#FEE2E2;color:#B91C1C;border:1px solid #FECACA;flex-shrink:0;letter-spacing:.03em}
+.notag{font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;
+  background:#FFF7ED;color:#C2410C;border:1px solid #FED7AA;flex-shrink:0}
+/* HEATMAP */
+.htbl-wrap{overflow-x:auto;border-radius:12px;border:1px solid #E2E8F0}
+table{border-collapse:collapse;width:100%;font-size:10.5px}
+th{background:#F8FAFC;color:#64748B;font-weight:600;padding:8px 10px;
+  text-align:center;border:1px solid #E2E8F0;white-space:nowrap;font-size:9.5px}
+th.lh{text-align:left;min-width:48px}
+th .bc{display:block;font-size:8.5px;font-weight:400;color:#94A3B8;margin-top:2px}
+td{padding:6px 9px;text-align:center;border:1px solid #E2E8F0;font-size:10px;font-weight:600;line-height:1.45}
+td.lh{text-align:left;color:#64748B;font-weight:500;background:#F8FAFC;white-space:nowrap;font-size:10.5px}
+td .sub{display:block;font-size:8px;font-weight:400;opacity:.75;margin-top:1px}
+/* HEATMAP CELL COLOURS */
+.c-def{background:#FEF2F2;color:#991B1B;border-color:#FECACA!important}
+.c-grn{background:#F0FDF4;color:#166534;border-color:#BBF7D0!important}
+.c-blue{background:#EFF6FF;color:#1E40AF;border-color:#BFDBFE!important}
+.c-amb{background:#FFFBEB;color:#92400E;border-color:#FDE68A!important}
+.c-none{background:#F8FAFC;color:#94A3B8;font-weight:400}
+.c-noshift{background:#FFF7ED;color:#9A3412;border-color:#FED7AA!important}
+/* RECOMMENDATIONS */
+.rec{border-radius:12px;padding:13px 16px;margin-bottom:9px;display:flex;gap:12px;align-items:flex-start}
+.rec.r-def{background:#FFF5F5;border:1px solid #FECACA}
+.rec.r-sur{background:#F0FDF4;border:1px solid #BBF7D0}
+.rec.r-warn{background:#FFFBEB;border:1px solid #FCD34D}
+.rec .ri{font-size:18px;flex-shrink:0;line-height:1.4}
+.rec .rbody .rt{font-size:12px;font-weight:600;color:#1E293B;margin-bottom:4px;line-height:1.4}
+.rec .rbody .rd{font-size:11px;color:#374151;line-height:1.6}
+.itag{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:5px;margin-right:3px}
+.r-def .itag{background:#FEE2E2;color:#B91C1C}
+.r-sur .itag{background:#DCFCE7;color:#15803D}
+.r-warn .itag{background:#FEF3C7;color:#92400E}
+</style>
+</head>
+<body>
+<div class="pg">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div>
+    <div class="htitle">IP Building (Banjara) FMA — Biller Efficiency &amp; Rebalancing Dashboard</div>
+    <div class="hsub">Shift-aware capacity analysis &nbsp;·&nbsp; 3-month data (78 working days, 31,447 bills) &nbsp;·&nbsp; 7 billing areas &nbsp;·&nbsp; All sections respond to every control below</div>
+  </div>
+  <div class="hbadges">
+    <span class="hb b1">78 Working Days</span>
+    <span class="hb b2">31,447 Bills</span>
+    <span class="hb b3">11 Billers</span>
+    <span class="hb b4">7 Areas</span>
+    <span class="hb b5">Emergency 24 × 7</span>
+  </div>
+</div>
+
+<!-- WARNING BAR -->
+<div class="wbar">
+  <span>⚠️</span>
+  <span><strong>Emergency has no dedicated biller assigned</strong> in the timings sheet, yet it records an average of <strong>28.5 bills/day</strong> round the clock (peak: 3–4 PM at 2.0 bills/hr). Capacity cannot be calculated for this area — cells are shown in orange. Recommend assigning at least one dedicated Emergency biller.</span>
+</div>
+
+<!-- CONTROLS -->
+<div class="ctrls">
+  <div class="ctrl">
+    <label>Bay / Area</label>
+    <select id="selBay" onchange="render()"></select>
+  </div>
+  <div class="ctrl">
+    <label>Avg Bill Time (min)</label>
+    <div class="tg">
+      <button id="bt5" onclick="setBT(5)">5 min</button>
+      <button id="bt7" class="on" onclick="setBT(7)">7 min</button>
+      <button id="bt10" onclick="setBT(10)">10 min</button>
+    </div>
+  </div>
+  <div class="ctrl">
+    <label>Peak Threshold</label>
+    <select id="selPeak" onchange="render()">
+      <option value="80">≥ 80% utilisation</option>
+      <option value="100" selected>≥ 100% (over capacity)</option>
+      <option value="120">≥ 120%</option>
+    </select>
+  </div>
+  <div class="ctrl">
+    <label>Surplus Below</label>
+    <select id="selSur" onchange="render()">
+      <option value="40">&lt; 40%</option>
+      <option value="50" selected>&lt; 50%</option>
+      <option value="60">&lt; 60%</option>
+    </select>
+  </div>
+  <div class="ctrl">
+    <label>Hour Filter</label>
+    <select id="selHF" onchange="render()">
+      <option value="core" selected>Core Hours (7 AM – 7 PM)</option>
+      <option value="all">All 24 Hours</option>
+      <option value="peak">Peak Hours Only</option>
+    </select>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="kpis" id="kpis"></div>
+
+<!-- CHART 1: Grouped Bar -->
+<div class="card">
+  <h2>📊 Avg Bills / Day vs Biller Capacity — by Hour</h2>
+  <div class="csub">3 bars per hour: avg bills/day · billers on duty · max capacity &nbsp;·&nbsp; Data labels above bars &nbsp;·&nbsp; Red bars = peak (over threshold) &nbsp;·&nbsp; Toggle bill time to recalculate capacity</div>
+  <div class="leg">
+    <span class="li"><span class="lb" style="background:#2563EB"></span>Avg bills / day</span>
+    <span class="li"><span class="lb" style="background:#16A34A;opacity:.8"></span>Billers on duty</span>
+    <span class="li"><span class="lb" style="background:#DC2626;opacity:.3"></span>Max capacity</span>
+  </div>
+  <div style="position:relative;height:330px"><canvas id="ch1"></canvas></div>
+</div>
+
+<!-- CHART 2: Bay Trend Lines -->
+<div class="card">
+  <h2>📈 Area-wise Hourly Bill Trend</h2>
+  <div class="csub">Each line = one billing area &nbsp;·&nbsp; Hover for cross-area comparison at same hour &nbsp;·&nbsp; Filtered by bay selector above</div>
+  <div class="leg" id="trendLeg"></div>
+  <div style="position:relative;height:250px"><canvas id="ch2"></canvas></div>
+</div>
+
+<!-- CHART 3: Utilisation Line -->
+<div class="card">
+  <h2>⚡ Hourly Utilisation % &nbsp;<span style="font-size:11px;font-weight:400;color:#94A3B8">(avg bills ÷ max capacity × 100 &nbsp;·&nbsp; dashed line = 100% &nbsp;·&nbsp; red dots = peak)</span></h2>
+  <div class="csub">Shows how stretched each hour is relative to biller capacity &nbsp;·&nbsp; Responds to bill time toggle &nbsp;·&nbsp; Emergency excluded (no shift assigned)</div>
+  <div style="position:relative;height:190px"><canvas id="ch3"></canvas></div>
+</div>
+
+<!-- SECTION 4: Utilisation Bars -->
+<div class="card">
+  <h2>📶 Hour-by-Hour Utilisation Bars</h2>
+  <div class="csub">Green = surplus &nbsp;·&nbsp; Amber = moderate load &nbsp;·&nbsp; Red = over capacity &nbsp;·&nbsp; Orange = bills exist but no biller assigned &nbsp;·&nbsp; Vertical line = 100% mark</div>
+  <div id="ubars"></div>
+</div>
+
+<!-- SECTION 5: Heatmap -->
+<div class="card">
+  <h2>🗺️ Manpower Gap Heatmap — Area × Hour</h2>
+  <div class="csub">Column header = area name + total billers assigned &nbsp;·&nbsp; Each cell: utilisation % · billers on duty (e.g. <strong>2B</strong>) · gap direction</div>
+  <div class="leg">
+    <span class="li"><span class="lb" style="background:#FEF2F2;border:1px solid #FECACA"></span>Deficit ≥ threshold</span>
+    <span class="li"><span class="lb" style="background:#F0FDF4;border:1px solid #BBF7D0"></span>Surplus &lt; threshold</span>
+    <span class="li"><span class="lb" style="background:#EFF6FF;border:1px solid #BFDBFE"></span>Balanced</span>
+    <span class="li"><span class="lb" style="background:#FFFBEB;border:1px solid #FDE68A"></span>Bills with no biller on shift</span>
+    <span class="li"><span class="lb" style="background:#FFF7ED;border:1px solid #FED7AA"></span>Emergency — no shift assigned</span>
+  </div>
+  <div class="htbl-wrap"><table id="htable"></table></div>
+</div>
+
+<!-- SECTION 6: Recommendations -->
+<div class="card">
+  <h2>💡 Rebalancing Recommendations</h2>
+  <div class="csub">Auto-generated from heatmap data &nbsp;·&nbsp; Deficit hours matched against surplus areas for redeployment suggestions</div>
+  <div id="recos"></div>
+</div>
+
+</div><!-- /pg -->
+
+<script>
+Chart.register(ChartDataLabels);
+
+/* ── DATA ─────────────────────────────────────────────────────────── */
+var BILL_MIN = 7;
+var WORKING_DAYS = 78;
+
+var ALL_IVS = [
+  '6 AM-7 AM','7 AM-8 AM','8 AM-9 AM','9 AM-10 AM','10 AM-11 AM','11 AM-12 PM',
+  '12 PM-1 PM','1 PM-2 PM','2 PM-3 PM','3 PM-4 PM','4 PM-5 PM','5 PM-6 PM',
+  '6 PM-7 PM','7 PM-8 PM','8 PM-9 PM','9 PM-10 PM',
+  '10 PM-11 PM','11 PM-12 AM','12 AM-1 AM','1 AM-2 AM','2 AM-3 AM','3 AM-4 AM','4 AM-5 AM','5 AM-6 AM'
+];
+var CORE_IVS = ['7 AM-8 AM','8 AM-9 AM','9 AM-10 AM','10 AM-11 AM','11 AM-12 PM',
+  '12 PM-1 PM','1 PM-2 PM','2 PM-3 PM','3 PM-4 PM','4 PM-5 PM','5 PM-6 PM','6 PM-7 PM','7 PM-8 PM'];
+
+var SHH = {
+  '6 AM-7 AM':'6A','7 AM-8 AM':'7A','8 AM-9 AM':'8A','9 AM-10 AM':'9A',
+  '10 AM-11 AM':'10A','11 AM-12 PM':'11A','12 PM-1 PM':'12P','1 PM-2 PM':'1P',
+  '2 PM-3 PM':'2P','3 PM-4 PM':'3P','4 PM-5 PM':'4P','5 PM-6 PM':'5P',
+  '6 PM-7 PM':'6P','7 PM-8 PM':'7P','8 PM-9 PM':'8P','9 PM-10 PM':'9P',
+  '10 PM-11 PM':'10P','11 PM-12 AM':'11P','12 AM-1 AM':'12A','1 AM-2 AM':'1A',
+  '2 AM-3 AM':'2A','3 AM-4 AM':'3A','4 AM-5 AM':'4A','5 AM-6 AM':'5A'
+};
+
+var AREA_LIST = ['OPD Bay 1','OPD Bay 2','OPD Bay 3','OPD Bay 4','RADIOLOGY','3rd floor','EMERGENCY'];
+var AREA_COLS = ['#2563EB','#16A34A','#D97706','#DC2626','#7C3AED','#0D9488','#DB2777'];
+
+/* Biller shifts: start (inclusive) → end (exclusive), 24h */
+var SHIFTS = {
+  'OPD Bay 1':  [{s:8,e:17},{s:9,e:18}],   /* ANANYA 8-5, GOPAL 9-6 */
+  'OPD Bay 2':  [{s:9,e:18},{s:10,e:19}],  /* AJAY 9-6, DEEP 10-7 */
+  'OPD Bay 3':  [{s:10,e:19},{s:9,e:18}],  /* HARIKA 10-7, TOUSIF 9-6 */
+  'OPD Bay 4':  [{s:7,e:16},{s:9,e:18}],   /* PRAVALIKA 7-4, SAMREEN 9-6 */
+  'RADIOLOGY':  [{s:8,e:17},{s:11,e:19}],  /* ISHIKA 8-5, SUSHMA 11-7 */
+  '3rd floor':  [{s:8,e:17}],              /* MRUNALINI 8-5 */
+  'EMERGENCY':  []                          /* NO BILLER ASSIGNED */
+};
+
+/* Avg bills/day per area per interval (÷78 days) */
+var RAW = {
+  'OPD Bay 1':{'7 AM-8 AM':0.154,'8 AM-9 AM':1.321,'9 AM-10 AM':4.192,'10 AM-11 AM':8.974,'11 AM-12 PM':19.167,'12 PM-1 PM':20.244,'1 PM-2 PM':16.346,'2 PM-3 PM':13.782,'3 PM-4 PM':9.897,'4 PM-5 PM':3.231,'5 PM-6 PM':1.282,'6 PM-7 PM':0.641,'7 PM-8 PM':0.295,'8 PM-9 PM':0.038,'12 AM-1 AM':0.013,'2 AM-3 AM':0.013,'4 AM-5 AM':0.013},
+  'OPD Bay 2':{'6 AM-7 AM':0.013,'7 AM-8 AM':0.244,'8 AM-9 AM':0.744,'9 AM-10 AM':2.769,'10 AM-11 AM':6.897,'11 AM-12 PM':10.474,'12 PM-1 PM':10.795,'1 PM-2 PM':8.269,'2 PM-3 PM':6.244,'3 PM-4 PM':5.795,'4 PM-5 PM':2.321,'5 PM-6 PM':1.013,'6 PM-7 PM':0.385,'7 PM-8 PM':0.154,'8 PM-9 PM':0.205,'9 PM-10 PM':0.026,'10 PM-11 PM':0.013,'1 AM-2 AM':0.013},
+  'OPD Bay 3':{'7 AM-8 AM':0.141,'8 AM-9 AM':0.538,'9 AM-10 AM':4.474,'10 AM-11 AM':6.064,'11 AM-12 PM':7.436,'12 PM-1 PM':6.179,'1 PM-2 PM':3.013,'2 PM-3 PM':1.962,'3 PM-4 PM':1.038,'4 PM-5 PM':0.603,'5 PM-6 PM':0.295,'6 PM-7 PM':0.128,'8 PM-9 PM':0.013},
+  'OPD Bay 4':{'6 AM-7 AM':0.013,'7 AM-8 AM':0.590,'8 AM-9 AM':5.000,'9 AM-10 AM':11.385,'10 AM-11 AM':15.179,'11 AM-12 PM':17.051,'12 PM-1 PM':13.885,'1 PM-2 PM':9.000,'2 PM-3 PM':6.564,'3 PM-4 PM':5.308,'4 PM-5 PM':2.333,'5 PM-6 PM':0.987,'6 PM-7 PM':0.282,'7 PM-8 PM':0.115,'8 PM-9 PM':0.128,'9 PM-10 PM':0.064,'10 PM-11 PM':0.026,'11 PM-12 AM':0.013,'12 AM-1 AM':0.026,'1 AM-2 AM':0.013},
+  'RADIOLOGY':{'6 AM-7 AM':0.090,'7 AM-8 AM':0.282,'8 AM-9 AM':2.205,'9 AM-10 AM':4.205,'10 AM-11 AM':5.077,'11 AM-12 PM':6.333,'12 PM-1 PM':6.641,'1 PM-2 PM':6.090,'2 PM-3 PM':3.833,'3 PM-4 PM':3.692,'4 PM-5 PM':2.346,'5 PM-6 PM':1.115,'6 PM-7 PM':0.705,'7 PM-8 PM':0.295,'8 PM-9 PM':0.231,'9 PM-10 PM':0.038,'11 PM-12 AM':0.013,'3 AM-4 AM':0.013,'4 AM-5 AM':0.026,'5 AM-6 AM':0.077},
+  '3rd floor':{'6 AM-7 AM':0.064,'7 AM-8 AM':0.167,'8 AM-9 AM':0.564,'9 AM-10 AM':2.103,'10 AM-11 AM':7.654,'11 AM-12 PM':14.705,'12 PM-1 PM':10.718,'1 PM-2 PM':7.679,'2 PM-3 PM':4.987,'3 PM-4 PM':3.333,'4 PM-5 PM':1.833,'5 PM-6 PM':0.744,'6 PM-7 PM':0.359,'7 PM-8 PM':0.205,'8 PM-9 PM':0.167,'9 PM-10 PM':0.115,'10 PM-11 PM':0.026,'11 PM-12 AM':0.013,'12 AM-1 AM':0.013,'2 AM-3 AM':0.013,'5 AM-6 AM':0.038},
+  'EMERGENCY':{'6 AM-7 AM':0.385,'7 AM-8 AM':0.474,'8 AM-9 AM':0.474,'9 AM-10 AM':0.615,'10 AM-11 AM':0.987,'11 AM-12 PM':1.167,'12 PM-1 PM':1.795,'1 PM-2 PM':1.808,'2 PM-3 PM':1.551,'3 PM-4 PM':2.038,'4 PM-5 PM':1.718,'5 PM-6 PM':1.679,'6 PM-7 PM':1.603,'7 PM-8 PM':1.538,'8 PM-9 PM':1.462,'9 PM-10 PM':1.231,'10 PM-11 PM':1.308,'11 PM-12 AM':1.167,'12 AM-1 AM':1.167,'1 AM-2 AM':1.218,'2 AM-3 AM':1.167,'3 AM-4 AM':0.833,'4 AM-5 AM':0.615,'5 AM-6 AM':0.538}
+};
+
+/* ── HELPERS ───────────────────────────────────────────────────────── */
+function ivHour(iv){
+  var m=iv.match(/^(\d+)\s*(AM|PM)/i);
+  var h=parseInt(m[1],10);
+  var ap=m[2].toUpperCase();
+  if(ap==='PM'&&h!==12)h+=12;
+  if(ap==='AM'&&h===12)h=0;
+  return h;
+}
+
+function billersAt(area,iv){
+  var h=ivHour(iv), sh=SHIFTS[area]||[], c=0;
+  for(var i=0;i<sh.length;i++) if(sh[i].s<=h && h<sh[i].e) c++;
+  return c;
+}
+function totalBillers(area){ return (SHIFTS[area]||[]).length; }
+function getBills(area,iv){ return (RAW[area]&&RAW[area][iv])||0; }
+function capPerHour(bn){ return bn*Math.floor(60/BILL_MIN); }
+
+/* ── AGGREGATE ─────────────────────────────────────────────────────── */
+function aggregate(selArea){
+  var areas = selArea==='All Areas' ? AREA_LIST : [selArea];
+  var rows=[];
+  for(var i=0;i<ALL_IVS.length;i++){
+    var iv=ALL_IVS[i];
+    var ab=0, bi=0, noShift=false;
+    for(var j=0;j<areas.length;j++){
+      ab += getBills(areas[j],iv);
+      bi += billersAt(areas[j],iv);
+    }
+    ab=Math.round(ab*100)/100;
+    var cp=capPerHour(bi);
+    var ut = cp>0 ? Math.round(ab/cp*1000)/10 : null;
+    var isNoShift = (bi===0 && ab>0.05);
+    if(ab>0.05||bi>0) rows.push({iv:iv,ab:ab,bi:bi,cp:cp,ut:ut,noShift:isNoShift});
+  }
+  return rows;
+}
+
+function filterRows(rows,hf,pkTh){
+  if(hf==='core') return rows.filter(function(r){return CORE_IVS.indexOf(r.iv)>=0;});
+  if(hf==='peak') return rows.filter(function(r){return r.ut!==null&&r.ut>=pkTh;});
+  return rows;
+}
+
+/* ── CHARTS ────────────────────────────────────────────────────────── */
+var CH1=null,CH2=null,CH3=null;
+
+function renderCharts(rows,selArea,pkTh){
+  var labels=rows.map(function(r){return SHH[r.iv];});
+  var bills=rows.map(function(r){return r.ab;});
+  var bils=rows.map(function(r){return r.bi;});
+  var caps=rows.map(function(r){return r.cp;});
+  var uts=rows.map(function(r){return r.ut;});
+  var isPk=rows.map(function(r){return (r.ut||0)>=pkTh&&!r.noShift;});
+
+  /* CH1 */
+  if(CH1)CH1.destroy();
+  CH1=new Chart(document.getElementById('ch1'),{
+    type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'Avg bills/day',data:bills,
+       backgroundColor:bills.map(function(_,i){return isPk[i]?'rgba(220,38,38,.82)':'rgba(37,99,235,.78)';}),
+       borderColor:bills.map(function(_,i){return isPk[i]?'#B91C1C':'#1D4ED8';}),
+       borderWidth:1,borderRadius:5,
+       datalabels:{anchor:'end',align:'end',font:{size:9,weight:'700',family:'Inter'},
+         color:bills.map(function(_,i){return isPk[i]?'#7F1D1D':'#1E3A8A';}),
+         formatter:function(v){return v>0.05?v.toFixed(1):'';}
+       }},
+      {label:'Billers on duty',data:bils,
+       backgroundColor:'rgba(22,163,74,.72)',borderColor:'#15803D',borderWidth:1,borderRadius:5,
+       datalabels:{anchor:'end',align:'end',font:{size:9,weight:'700',family:'Inter'},color:'#14532D',
+         formatter:function(v){return v>0?v:'';}}},
+      {label:'Max capacity',data:caps,
+       backgroundColor:'rgba(220,38,38,.1)',borderColor:'rgba(220,38,38,.38)',borderWidth:1.5,borderRadius:5,
+       datalabels:{anchor:'end',align:'end',font:{size:9,weight:'700',family:'Inter'},color:'#991B1B',
+         formatter:function(v){return v>0?v:'';}}}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,layout:{padding:{top:26}},
+      plugins:{legend:{display:false},datalabels:{display:true},
+        tooltip:{backgroundColor:'#1E293B',borderColor:'#334155',borderWidth:1,
+          titleColor:'#F8FAFC',bodyColor:'#CBD5E1',padding:10,
+          callbacks:{afterBody:function(it){
+            var i=it[0].dataIndex;
+            if(rows[i].noShift) return '⚠ No biller on shift';
+            return caps[i]>0?'Utilisation: '+(uts[i]||0)+'%':'—';
+          }}}},
+      scales:{
+        x:{ticks:{font:{size:10,family:'Inter'},color:'#64748B',autoSkip:false,maxRotation:0},
+           grid:{display:false},border:{color:'#E2E8F0'}},
+        y:{ticks:{font:{size:10,family:'Inter'},color:'#64748B'},
+           grid:{color:'rgba(226,232,240,.7)'},border:{color:'#E2E8F0'}}
+      }},plugins:[ChartDataLabels]});
+
+  /* CH2 — trend lines */
+  var visAreas = selArea==='All Areas' ? AREA_LIST : [selArea];
+  var trendIVs = ALL_IVS.filter(function(iv){
+    return visAreas.some(function(a){return getBills(a,iv)>0.05;});
+  });
+  if(document.getElementById('selHF').value==='core')
+    trendIVs=trendIVs.filter(function(iv){return CORE_IVS.indexOf(iv)>=0;});
+  document.getElementById('trendLeg').innerHTML=visAreas.map(function(a,i){
+    return '<span class="li"><span class="ll" style="background:'+AREA_COLS[i%AREA_COLS.length]+'"></span>'+a+'</span>';
+  }).join('');
+  if(CH2)CH2.destroy();
+  CH2=new Chart(document.getElementById('ch2'),{
+    type:'line',
+    data:{labels:trendIVs.map(function(iv){return SHH[iv];}),
+      datasets:visAreas.map(function(a,i){return{
+        label:a,
+        data:trendIVs.map(function(iv){var v=getBills(a,iv);return v>0.05?v:null;}),
+        borderColor:AREA_COLS[i%AREA_COLS.length],
+        backgroundColor:'transparent',borderWidth:2.5,
+        pointRadius:3.5,pointBackgroundColor:AREA_COLS[i%AREA_COLS.length],
+        tension:.38,spanGaps:false,datalabels:{display:false}
+      };})
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},datalabels:{display:false},
+        tooltip:{mode:'index',intersect:false,backgroundColor:'#1E293B',
+          borderColor:'#334155',borderWidth:1,titleColor:'#F8FAFC',bodyColor:'#CBD5E1',padding:10}},
+      scales:{
+        x:{ticks:{font:{size:10,family:'Inter'},color:'#64748B',autoSkip:false,maxRotation:0},
+           grid:{display:false},border:{color:'#E2E8F0'}},
+        y:{ticks:{font:{size:10,family:'Inter'},color:'#64748B'},
+           grid:{color:'rgba(226,232,240,.7)'},border:{color:'#E2E8F0'},
+           title:{display:true,text:'Avg bills / day',font:{size:10,family:'Inter'},color:'#94A3B8'}}
+      }},plugins:[ChartDataLabels]});
+
+  /* CH3 — utilisation line (skip Emergency = no shift) */
+  var utRows=rows.filter(function(r){return!r.noShift&&r.ut!==null;});
+  if(CH3)CH3.destroy();
+  CH3=new Chart(document.getElementById('ch3'),{
+    type:'line',
+    data:{labels:utRows.map(function(r){return SHH[r.iv];}),
+      datasets:[
+        {label:'Utilisation %',data:utRows.map(function(r){return r.ut;}),
+         borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,.06)',fill:true,tension:.38,
+         pointRadius:utRows.map(function(r){return(r.ut||0)>=pkTh?7:3.5;}),
+         pointBackgroundColor:utRows.map(function(r){return(r.ut||0)>=pkTh?'#DC2626':'#2563EB';}),
+         borderWidth:2.5,spanGaps:false,datalabels:{display:false}},
+        {label:'100%',data:utRows.map(function(){return 100;}),
+         borderColor:'rgba(220,38,38,.4)',borderWidth:1.5,borderDash:[6,4],
+         pointRadius:0,fill:false,datalabels:{display:false}}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},datalabels:{display:false},
+        tooltip:{backgroundColor:'#1E293B',borderColor:'#334155',borderWidth:1,
+          titleColor:'#F8FAFC',bodyColor:'#CBD5E1'}},
+      scales:{
+        x:{ticks:{font:{size:10,family:'Inter'},color:'#64748B',autoSkip:false,maxRotation:0},
+           grid:{display:false},border:{color:'#E2E8F0'}},
+        y:{ticks:{font:{size:10,family:'Inter'},color:'#64748B',callback:function(v){return v+'%';}},
+           min:0,grid:{color:'rgba(226,232,240,.7)'},border:{color:'#E2E8F0'}}
+      }},plugins:[ChartDataLabels]});
+}
+
+/* ── UTIL BARS ─────────────────────────────────────────────────────── */
+function renderUBars(rows,pkTh,surTh){
+  var validUts=rows.filter(function(r){return r.ut!==null;}).map(function(r){return r.ut;});
+  var maxU=Math.max.apply(null,validUts.concat([100]));
+  var refPct=Math.min(100/maxU*100,100);
+  var h='';
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i];
+    if(r.ab<0.05)continue;
+    var u=r.ut||0;
+    if(r.noShift){
+      h+='<div class="urow"><div class="ulbl">'+SHH[r.iv]+'</div>'+
+        '<div class="ubar" style="background:#FFF7ED;border-color:#FED7AA">'+
+        '<div style="height:100%;width:40%;background:rgba(194,65,12,.25);border-radius:5px"></div></div>'+
+        '<div class="uval" style="color:#C2410C">N/A</div>'+
+        '<span class="notag">NO BILLER</span></div>';
+      continue;
+    }
+    var w=Math.min(u/maxU*100,100);
+    var col=u>=pkTh?'#DC2626':u>=surTh?'#D97706':'#16A34A';
+    h+='<div class="urow"><div class="ulbl">'+SHH[r.iv]+'</div>'+
+      '<div class="ubar"><div class="ufill" style="width:'+w+'%;background:'+col+'"></div>'+
+      '<div class="uref" style="left:'+refPct+'%"></div></div>'+
+      '<div class="uval" style="color:'+col+'">'+u+'%</div>'+
+      (u>=pkTh?'<span class="ptag">PEAK</span>':'')+'</div>';
+  }
+  document.getElementById('ubars').innerHTML=h||'<p style="color:#94A3B8;font-size:12px">No data for this selection.</p>';
+}
+
+/* ── HEATMAP ───────────────────────────────────────────────────────── */
+function renderHeatmap(selArea,hf,pkTh,surTh){
+  var hAreas = selArea==='All Areas' ? AREA_LIST : [selArea];
+  var hIVs = ALL_IVS.filter(function(iv){
+    if(hf==='core'&&CORE_IVS.indexOf(iv)<0)return false;
+    return hAreas.some(function(a){return getBills(a,iv)>0.05||billersAt(a,iv)>0;});
+  });
+  var bp=Math.floor(60/BILL_MIN);
+  var defMap={};
+
+  var h='<tr><th class="lh">Hour</th>';
+  for(var ai=0;ai<hAreas.length;ai++){
+    var tb=totalBillers(hAreas[ai]);
+    h+='<th>'+hAreas[ai]+'<span class="bc">'+tb+' biller'+(tb!==1?'s':'')+' assigned</span></th>';
+  }
+  h+='</tr>';
+
+  for(var ri=0;ri<hIVs.length;ri++){
+    var iv=hIVs[ri];
+    // for peak filter: only show if any area is at/over threshold
+    if(hf==='peak'){
+      var anyDef=hAreas.some(function(a){
+        var ab=getBills(a,iv),bn=billersAt(a,iv),c=bn*bp;
+        return c>0&&Math.round(ab/c*100)>=pkTh;
+      });
+      if(!anyDef)continue;
+    }
+    h+='<tr><td class="lh">'+SHH[iv]+'</td>';
+    for(var ci=0;ci<hAreas.length;ci++){
+      var area=hAreas[ci];
+      var ab=getBills(area,iv);
+      var bn=billersAt(area,iv);
+      var ca=bn*bp;
+      var cls='c-none', txt='—';
+
+      if(SHIFTS[area].length===0&&ab>0.05){
+        // Emergency — no shift at all
+        cls='c-noshift';
+        txt=Math.round(ab*10)/10+'<span class="sub">0B · no shift</span>';
+      } else if(ab<0.05&&bn===0){
+        cls='c-none'; txt='—';
+      } else if(bn===0&&ab>0.05){
+        // has bills but this biller not on shift this hour
+        cls='c-amb';
+        txt=Math.round(ab*10)/10+'<span class="sub">0B · outside shift</span>';
+      } else {
+        var u2=Math.round(ab/ca*100);
+        var g2=Math.round(ab-ca);
+        if(u2>=pkTh){
+          cls='c-def';
+          txt=u2+'%<span class="sub">'+bn+'B · +'+(g2>0?g2:0)+' over</span>';
+          if(!defMap[iv])defMap[iv]={defs:[],surs:[]};
+          defMap[iv].defs.push({area:area,u:u2,g:Math.max(g2,0),bn:bn});
+        } else if(u2<surTh){
+          cls='c-grn';
+          txt=u2+'%<span class="sub">'+bn+'B · '+Math.round(ab*10)/10+' bills</span>';
+          if(!defMap[iv])defMap[iv]={defs:[],surs:[]};
+          defMap[iv].surs.push({area:area,u:u2,bn:bn});
+        } else {
+          cls='c-blue';
+          txt=u2+'%<span class="sub">'+bn+'B</span>';
+        }
+      }
+      h+='<td class="'+cls+'">'+txt+'</td>';
+    }
+    h+='</tr>';
+  }
+  document.getElementById('htable').innerHTML=h;
+  return defMap;
+}
+
+/* ── RECOMMENDATIONS ───────────────────────────────────────────────── */
+function renderRecos(defMap,hIVs){
+  var ks=Object.keys(defMap).filter(function(iv){return hIVs.indexOf(iv)>=0;});
+  ks.sort(function(a,b){return ALL_IVS.indexOf(a)-ALL_IVS.indexOf(b);});
+  var h='';
+  for(var i=0;i<ks.length;i++){
+    var iv=ks[i], dm=defMap[iv];
+    if(!dm.defs.length)continue;
+    var defStr=dm.defs.map(function(d){
+      return '<span class="itag">'+d.area+'</span>'+d.u+'% utilised · +'+d.g+' bills over cap ('+d.bn+' biller'+(d.bn!==1?'s':'')+')';
+    }).join('<br>');
+    var surStr=dm.surs.length
+      ? dm.surs.map(function(s){return '<span class="itag">'+s.area+'</span>'+s.u+'% utilised · '+s.bn+'B available';}).join('<br>')
+      : '<em style="color:#94A3B8">No surplus area at this hour — consider staggering a shift or extending coverage</em>';
+    h+='<div class="rec r-def"><div class="ri">⚠️</div><div class="rbody">'+
+      '<div class="rt">'+SHH[iv]+' — overloaded area'+(dm.defs.length>1?'s':'')+'</div>'+
+      '<div class="rd">'+defStr+
+      '<div style="margin-top:7px;padding-top:7px;border-top:1px solid #FECACA">'+
+      '<strong style="color:#15803D">Borrow from:</strong><br>'+surStr+'</div></div>'+
+      '</div></div>';
+  }
+  var surOnly=ks.filter(function(iv){return defMap[iv].surs.length&&!defMap[iv].defs.length;});
+  if(surOnly.length){
+    h+='<div class="rec r-sur"><div class="ri">💤</div><div class="rbody">'+
+      '<div class="rt">Consistently under-utilised hours — consider shorter shifts or staggered start times</div>'+
+      '<div class="rd">'+surOnly.map(function(iv){
+        return '<span class="itag">'+SHH[iv]+'</span> '+defMap[iv].surs.map(function(s){return s.area+' ('+s.u+'%, '+s.bn+'B)';}).join(' · ');
+      }).join('<br>')+'</div></div></div>';
+  }
+  if(!h) h='<p style="font-size:12px;color:#64748B;padding:6px 0">✅ No critical mismatches for the current filter settings.</p>';
+
+  // Always append Emergency note
+  h+='<div class="rec r-warn"><div class="ri">🚨</div><div class="rbody">'+
+    '<div class="rt">Emergency — No Biller Assigned (All Hours)</div>'+
+    '<div class="rd">Emergency records <strong>28.5 bills/day</strong> round the clock. Peak hours: 1–2 PM (1.8 bills/hr) and 3–4 PM (2.0 bills/hr). '+
+    'Recommend assigning <strong>at least 1 dedicated biller</strong> for 9 AM–6 PM and reviewing night coverage for high-volume hours (10 PM–2 AM averaging 1.2–1.3 bills/hr).</div>'+
+    '</div></div>';
+  document.getElementById('recos').innerHTML=h;
+}
+
+/* ── KPIs ──────────────────────────────────────────────────────────── */
+function renderKPIs(rows,pkTh){
+  var mapped=rows.filter(function(r){return!r.noShift;});
+  var uts=mapped.filter(function(r){return r.ut!==null;}).map(function(r){return r.ut;});
+  var maxU=Math.max.apply(null,uts.concat([0]));
+  var pkHrs=mapped.filter(function(r){return(r.ut||0)>=pkTh;}).length;
+  var totalB=rows.reduce(function(a,r){return a+r.ab;},0);
+  var pkRow=rows.reduce(function(a,b){return b.ab>a.ab?b:a},{ab:0,iv:'—'});
+  var bp=Math.floor(60/BILL_MIN);
+
+  var uCol=maxU>=150?'k-red':maxU>=100?'k-amb':'k-grn';
+  var pkCol=pkHrs>0?'k-red':'k-grn';
+
+  document.getElementById('kpis').innerHTML=
+    '<div class="kpi k-blue"><div class="kl">Avg Bills / Day</div><div class="kv">'+Math.round(totalB*10)/10+'</div><div class="ks">current filter view</div></div>'+
+    '<div class="kpi k-teal"><div class="kl">Peak Hour</div><div class="kv" style="font-size:16px">'+SHH[pkRow.iv]+'</div><div class="ks">'+pkRow.ab.toFixed(1)+' avg bills</div></div>'+
+    '<div class="kpi '+uCol+'"><div class="kl">Max Utilisation</div><div class="kv">'+maxU+'%</div><div class="ks">highest hour (mapped areas)</div></div>'+
+    '<div class="kpi '+pkCol+'"><div class="kl">Over-Threshold Hrs</div><div class="kv">'+pkHrs+'</div><div class="ks">≥ '+pkTh+'% (mapped areas)</div></div>'+
+    '<div class="kpi k-teal"><div class="kl">Capacity per Biller</div><div class="kv" style="font-size:17px">'+bp+'/hr</div><div class="ks">at '+BILL_MIN+' min per bill</div></div>';
+}
+
+/* ── MAIN RENDER ───────────────────────────────────────────────────── */
+function render(){
+  var selArea=document.getElementById('selBay').value;
+  var pkTh=parseInt(document.getElementById('selPeak').value,10);
+  var surTh=parseInt(document.getElementById('selSur').value,10);
+  var hf=document.getElementById('selHF').value;
+
+  var allRows=aggregate(selArea);
+  var rows=filterRows(allRows,hf,pkTh);
+  if(!rows.length) return;
+
+  renderKPIs(rows,pkTh);
+  renderCharts(rows,selArea,pkTh);
+  renderUBars(rows,pkTh,surTh);
+  var hAreas=selArea==='All Areas'?AREA_LIST:[selArea];
+  var hIVs=ALL_IVS.filter(function(iv){
+    if(hf==='core'&&CORE_IVS.indexOf(iv)<0)return false;
+    return hAreas.some(function(a){return getBills(a,iv)>0.05||billersAt(a,iv)>0;});
+  });
+  var defMap=renderHeatmap(selArea,hf,pkTh,surTh);
+  renderRecos(defMap,hIVs);
+}
+
+function setBT(m){
+  BILL_MIN=m;
+  ['bt5','bt7','bt10'].forEach(function(id){document.getElementById(id).classList.remove('on');});
+  document.getElementById('bt'+m).classList.add('on');
+  render();
+}
+
+window.addEventListener('load',function(){
+  var sb=document.getElementById('selBay');
+  ['All Areas'].concat(AREA_LIST).forEach(function(a){
+    var o=document.createElement('option');o.value=a;o.textContent=a;sb.appendChild(o);
+  });
+  render();
+});
+</script>
+</body>
+</html>
